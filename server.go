@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
@@ -27,7 +29,14 @@ func main() {
 		date_posted: String
 	}
 	`
-	
+	fmt.Println(" Connecting to Postgres Database...")
+	conn, err := pgx.Connect(context.Background(), os.Getenv("postgres://postgres@localhost:5432"))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Unable to connection to database: %v\n", err)
+		os.Exit(1)
+	}
+	defer conn.Close(context.Background())
+
 	schema := graphql.MustParseSchema(s, &Resolver{})
 	fmt.Println(" 🚀  - Server is now listening on port 8080")
 	http.Handle("/query", &relay.Handler{Schema: schema})
